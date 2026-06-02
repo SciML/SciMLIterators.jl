@@ -56,8 +56,10 @@ function Base.iterate(tup::IntegratorIntervals, state = 0)
     done(tup.integrator) && return nothing
     state += 1
     step!(tup.integrator)
-    return (tup.integrator.uprev, tup.integrator.tprev,
-        tup.integrator.u, tup.integrator.t), state
+    return (
+            tup.integrator.uprev, tup.integrator.tprev,
+            tup.integrator.u, tup.integrator.t,
+        ), state
 end
 
 function Base.eltype(
