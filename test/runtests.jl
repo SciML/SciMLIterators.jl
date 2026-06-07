@@ -10,7 +10,7 @@ using OrdinaryDiffEq
     @testset "Solution tuples" begin
         sol = solve(prob, Tsit5())
         tups = tuples(sol)
-        @test length(tups) == length(sol)
+        @test length(tups) == length(sol.u)
         @test tups[1] == (sol.u[1], sol.t[1])
         @test tups[end] == (sol.u[end], sol.t[end])
     end
@@ -55,7 +55,7 @@ using OrdinaryDiffEq
         sol = solve(prob_ip, Tsit5())
 
         tups = tuples(sol)
-        @test length(tups) == length(sol)
+        @test length(tups) == length(sol.u)
         @test tups[1][1] == sol.u[1]
 
         integrator = init(prob_ip, Tsit5())
