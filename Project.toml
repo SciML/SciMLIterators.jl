@@ -11,11 +11,14 @@ SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 OrdinaryDiffEq = "6, 7"
 RecursiveArrayTools = "3, 4"
 SciMLBase = "2.152, 3"
+Test = "1"
 julia = "1.10"
 
 [extras]
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 
 [targets]
-test = ["Test", "OrdinaryDiffEq"]
+test = ["Test", "OrdinaryDiffEq", "Aqua", "JET"]
