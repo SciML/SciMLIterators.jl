@@ -1,11 +1,10 @@
 using Test
+using SciMLIterators
+using OrdinaryDiffEq
 
 const GROUP = get(ENV, "GROUP", "All")
 
 if GROUP == "All" || GROUP == "Core"
-    using SciMLIterators
-    using OrdinaryDiffEq
-
     @testset "SciMLIterators.jl" begin
         # Simple ODE: du/dt = -u
         f(u, p, t) = -u
