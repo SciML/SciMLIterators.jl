@@ -4,3 +4,4 @@ SciMLIterators = "efe4dcdd-3aed-4391-894d-a9dbd16a2f14"
 
 [compat]
 Documenter = "1"
+SciMLIterators = "1.0.0"
