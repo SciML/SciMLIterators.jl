@@ -12,18 +12,17 @@ run_qa(
     explicit_imports = true,
     # The remaining ExplicitImports violations are unavoidable non-public
     # dependency names with no public equivalent:
-    #   * SciMLBase's integrator/solution interface (`AbstractTimeseriesSolution`,
-    #     `DEIntegrator`, `done`) is the entire surface this package iterates over,
-    #     and none of those names are exported or declared public by SciMLBase.
-    #   * `Base.IteratorSize` (the iterator trait this package overloads) and its
-    #     documented return value `Base.SizeUnknown` are both non-public Base
-    #     internals with no public spelling.
+    #   * SciMLBase's solution/iteration interface (`AbstractTimeseriesSolution`,
+    #     `done`) is part of the surface this package iterates over, and neither
+    #     name is exported or declared public by SciMLBase.
+    #   * `Base.SizeUnknown` is the documented return value of the iterator trait
+    #     this package overloads, a non-public Base internal with no public spelling.
     ei_kwargs = (;
         all_explicit_imports_are_public = (;
-            ignore = (:AbstractTimeseriesSolution, :DEIntegrator, :done),
+            ignore = (:AbstractTimeseriesSolution, :done),
         ),
         all_qualified_accesses_are_public = (;
-            ignore = (:IteratorSize, :SizeUnknown),
+            ignore = (:SizeUnknown,),
         ),
     ),
 )
