@@ -10,13 +10,6 @@ export tuples, intervals, TimeChoiceIterator
 # Integrator Tuples: iterate (u, t) pairs from an integrator
 # ──────────────────────────────────────────────────────────────────────────────
 
-"""
-TYPEDEF
-
-Iterator that steps through a `DEIntegrator` and yields `(u, t)` tuples.
-
-Created via [`tuples`](@ref).
-"""
 struct IntegratorTuples{I}
     integrator::I
 end
@@ -40,14 +33,6 @@ Base.IteratorSize(::Type{<:IntegratorTuples}) = Base.SizeUnknown()
 # Integrator Intervals: iterate (uprev, tprev, u, t) tuples from an integrator
 # ──────────────────────────────────────────────────────────────────────────────
 
-"""
-TYPEDEF
-
-Iterator that steps through a `DEIntegrator` and yields
-`(uprev, tprev, u, t)` tuples representing solution intervals.
-
-Created via [`intervals`](@ref).
-"""
 struct IntegratorIntervals{I}
     integrator::I
 end
@@ -75,14 +60,36 @@ Base.IteratorSize(::Type{<:IntegratorIntervals}) = Base.SizeUnknown()
 # ──────────────────────────────────────────────────────────────────────────────
 
 """
-TYPEDEF
+    TimeChoiceIterator(integrator, ts)
 
-Iterator that steps an integrator to specific time points and yields
-`(u, t)` pairs at each requested time.
+Iterator that evaluates an integrator at specified time points and yields `(u, t)`
+pairs for each entry of `ts`.
 
-## Fields
+# Fields
 
-Fields
+  - `integrator`: A `SciMLBase.DEIntegrator`-compatible object. Iteration mutates
+    this integrator when a requested time is ahead of the current integrator time.
+  - `ts`: A finite collection of requested time points. `length(ts)` defines the
+    length of the iterator, and `ts[state]` must return the requested time for
+    each iteration state.
+
+# Interface
+
+`integrator` must support the SciML integrator operations used for dense output:
+`SciMLBase.isinplace(integrator.sol.prob)`, `SciMLBase.get_tmp_cache(integrator)`
+for in-place problems, `SciMLBase.step!(integrator, dt)` for forward movement,
+and callable dense output as `integrator(t)` or `integrator(out, t)`. Requested
+times may move backward relative to the current integrator time only when the
+integrator supports interpolation at that time.
+
+# Examples
+
+```julia
+iter = init(prob, Tsit5())
+for (u, t) in TimeChoiceIterator(iter, 0.0:0.25:1.0)
+    # `u` is the state evaluated at the requested `t`
+end
+```
 """
 struct TimeChoiceIterator{T, T2}
     "The integrator to step"
@@ -127,12 +134,36 @@ Base.length(iter::TimeChoiceIterator) = length(iter.ts)
 
 """
     tuples(integrator::DEIntegrator)
-
-Create an iterator that steps the integrator and yields `(u, t)` tuples at each step.
-
     tuples(sol::AbstractTimeseriesSolution)
 
-Return an array of `(u, t)` tuples from a solved solution object.
+Return `(u, t)` pairs from a SciML integrator or solution.
+
+# Arguments
+
+  - `integrator`: A `SciMLBase.DEIntegrator`. Returns an iterator that mutates the
+    integrator by stepping it and yielding `(integrator.u, integrator.t)` after
+    each step.
+  - `sol`: A `SciMLBase.AbstractTimeseriesSolution`. Returns an array formed from
+    `tuple.(sol.u, sol.t)` without mutating the solution.
+
+# Interface
+
+The integrator method requires the SciML integrator interface used by
+`IntegratorTuples`: `SciMLBase.done`, `SciMLBase.step!`, and readable `u` and `t`
+fields. The solution method requires `sol.u` and `sol.t` to have matching
+iteration lengths.
+
+# Examples
+
+```julia
+sol = solve(prob, Tsit5())
+history = tuples(sol)
+
+iter = init(prob, Tsit5())
+for (u, t) in tuples(iter)
+    # stream states as the integrator advances
+end
+```
 """
 tuples(integrator::DEIntegrator) = IntegratorTuples(integrator)
 tuples(sol::AbstractTimeseriesSolution) = tuple.(sol.u, sol.t)
@@ -142,6 +173,26 @@ tuples(sol::AbstractTimeseriesSolution) = tuple.(sol.u, sol.t)
 
 Create an iterator that steps the integrator and yields `(uprev, tprev, u, t)` tuples
 representing each solution interval.
+
+# Arguments
+
+  - `integrator`: A `SciMLBase.DEIntegrator`. Iteration mutates this integrator by
+    stepping it forward.
+
+# Interface
+
+`integrator` must implement the SciML integrator interface used by
+`IntegratorIntervals`: `SciMLBase.done`, `SciMLBase.step!`, and readable
+`uprev`, `tprev`, `u`, and `t` fields after each step.
+
+# Examples
+
+```julia
+iter = init(prob, Tsit5())
+for (uprev, tprev, u, t) in intervals(iter)
+    dt = t - tprev
+end
+```
 """
 function intervals end
 
