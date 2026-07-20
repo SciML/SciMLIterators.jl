@@ -25,7 +25,6 @@ run_qa(
             ignore = (:SizeUnknown,),
         ),
     ),
-    api_docs_kwargs = (; rendered = true),
 )
 
 @testset "Aqua piracies (known issue #9)" begin
