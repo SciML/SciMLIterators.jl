@@ -5,8 +5,10 @@ Iterator utilities for [SciML](https://sciml.ai/) solution and integrator object
 These iterators were previously part of SciMLBase.jl and have been extracted into
 their own package for modularity.
 
-## API Reference
+## Public API
 
-```@autodocs
-Modules = [SciMLIterators]
+```@docs
+tuples
+intervals
+TimeChoiceIterator
 ```
