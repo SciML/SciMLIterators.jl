@@ -1,8 +1,6 @@
 module SciMLIterators
 
-using SciMLBase: SciMLBase, AbstractTimeseriesSolution, DEIntegrator,
-    done, step!, get_tmp_cache, isinplace
-import RecursiveArrayTools: tuples
+using SciMLBase: AbstractTimeseriesSolution, DEIntegrator, step!, get_tmp_cache, isinplace
 
 export tuples, intervals, TimeChoiceIterator
 
@@ -14,11 +12,11 @@ struct IntegratorTuples{I}
     integrator::I
 end
 
-function Base.iterate(tup::IntegratorTuples, state = 0)
-    done(tup.integrator) && return nothing
-    step!(tup.integrator)
-    state += 1
-    return (tup.integrator.u, tup.integrator.t), state
+function Base.iterate(tup::IntegratorTuples, state = nothing)
+    next = isnothing(state) ? iterate(tup.integrator) : iterate(tup.integrator, state)
+    isnothing(next) && return nothing
+    integrator, next_state = next
+    return (integrator.u, integrator.t), next_state
 end
 
 function Base.eltype(
@@ -27,7 +25,8 @@ function Base.eltype(
     return Tuple{U, T}
 end
 
-Base.IteratorSize(::Type{<:IntegratorTuples}) = Base.SizeUnknown()
+Base.IteratorSize(::Type{<:IntegratorTuples{I}}) where {I} = Base.IteratorSize(I)
+Base.length(tup::IntegratorTuples) = length(tup.integrator)
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Integrator Intervals: iterate (uprev, tprev, u, t) tuples from an integrator
@@ -37,14 +36,14 @@ struct IntegratorIntervals{I}
     integrator::I
 end
 
-function Base.iterate(tup::IntegratorIntervals, state = 0)
-    done(tup.integrator) && return nothing
-    state += 1
-    step!(tup.integrator)
+function Base.iterate(tup::IntegratorIntervals, state = nothing)
+    next = isnothing(state) ? iterate(tup.integrator) : iterate(tup.integrator, state)
+    isnothing(next) && return nothing
+    integrator, next_state = next
     return (
-            tup.integrator.uprev, tup.integrator.tprev,
-            tup.integrator.u, tup.integrator.t,
-        ), state
+            integrator.uprev, integrator.tprev,
+            integrator.u, integrator.t,
+        ), next_state
 end
 
 function Base.eltype(
@@ -53,7 +52,8 @@ function Base.eltype(
     return Tuple{U, T, U, T}
 end
 
-Base.IteratorSize(::Type{<:IntegratorIntervals}) = Base.SizeUnknown()
+Base.IteratorSize(::Type{<:IntegratorIntervals{I}}) where {I} = Base.IteratorSize(I)
+Base.length(tup::IntegratorIntervals) = length(tup.integrator)
 
 # ──────────────────────────────────────────────────────────────────────────────
 # TimeChoiceIterator: iterate at specific time points
@@ -148,10 +148,12 @@ Return `(u, t)` pairs from a SciML integrator or solution.
 
 # Interface
 
-The integrator method requires the SciML integrator interface used by
-`IntegratorTuples`: `SciMLBase.done`, `SciMLBase.step!`, and readable `u` and `t`
-fields. The solution method requires `sol.u` and `sol.t` to have matching
-iteration lengths.
+The integrator method follows the `SciMLBase.DEIntegrator` iterator contract. Its
+`Base.iterate(integrator, state)` method must either return `nothing` or
+`(integrator, next_state)` after advancing the integrator. The returned integrator
+must expose readable `u` and `t` fields. `tuples` neither calls solver internals
+nor assumes a particular concrete integrator implementation. The solution method
+requires `sol.u` and `sol.t` to have matching iteration lengths.
 
 # Examples
 
@@ -165,6 +167,8 @@ for (u, t) in tuples(iter)
 end
 ```
 """
+function tuples end
+
 tuples(integrator::DEIntegrator) = IntegratorTuples(integrator)
 tuples(sol::AbstractTimeseriesSolution) = tuple.(sol.u, sol.t)
 
@@ -181,9 +185,12 @@ representing each solution interval.
 
 # Interface
 
-`integrator` must implement the SciML integrator interface used by
-`IntegratorIntervals`: `SciMLBase.done`, `SciMLBase.step!`, and readable
-`uprev`, `tprev`, `u`, and `t` fields after each step.
+`integrator` must follow the `SciMLBase.DEIntegrator` iterator contract:
+`Base.iterate(integrator, state)` returns `nothing` when iteration is complete or
+`(integrator, next_state)` after advancing. The returned integrator must expose
+readable `uprev`, `tprev`, `u`, and `t` fields. This API is intended for solver
+implementers and analysis tools; callers must treat the input integrator as
+consumed and should not concurrently step it through another interface.
 
 # Examples
 
