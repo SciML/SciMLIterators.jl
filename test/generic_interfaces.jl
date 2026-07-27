@@ -47,16 +47,16 @@ end
 
 @testset "Generic SciML interfaces" begin
     @test collect(tuples(GenericSolution([1.0, 2.0], [0.0, 1.0]))) ==
-          [(1.0, 0.0), (2.0, 1.0)]
+        [(1.0, 0.0), (2.0, 1.0)]
 
     tuple_integrator = GenericIntegrator([1.0, 4.0], [0.5, 1.0], 0.0, 0.0, 0.0, 0.0)
     @test collect(tuples(tuple_integrator)) == [(1.0, 0.5), (4.0, 1.0)]
 
     interval_integrator = GenericIntegrator([1.0, 4.0], [0.5, 1.0], 0.0, 0.0, 0.0, 0.0)
     @test collect(intervals(interval_integrator)) ==
-          [(0.0, 0.0, 1.0, 0.5), (1.0, 0.5, 4.0, 1.0)]
+        [(0.0, 0.0, 1.0, 0.5), (1.0, 0.5, 4.0, 1.0)]
 
     dense_integrator = GenericDenseIntegrator(GenericIntegratorSolution(GenericProblem()), 0.0, 0.0)
     @test collect(TimeChoiceIterator(dense_integrator, [0.0, 1.0, 0.5])) ==
-          [(0.0, 0.0), (1.0, 1.0), (0.25, 0.5)]
+        [(0.0, 0.0), (1.0, 1.0), (0.25, 0.5)]
 end
