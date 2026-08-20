@@ -1,6 +1,8 @@
 module SciMLIterators
 
+import SciMLBase
 using SciMLBase: AbstractTimeseriesSolution, DEIntegrator, step!, get_tmp_cache, isinplace
+using PrecompileTools: @compile_workload, @setup_workload
 
 export tuples, intervals, TimeChoiceIterator
 
@@ -204,5 +206,7 @@ end
 function intervals end
 
 intervals(integrator::DEIntegrator) = IntegratorIntervals(integrator)
+
+include("precompilation.jl")
 
 end # module
